@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import type { ProjectNode } from '../types/ProjectTypes';
 import { SidebarNode } from './SidebarNode';
-import styles from './Sidebar.module.css';
+import { Menu, X, FolderPlus, FileJson, Plus, Edit, Copy, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
     nodes: ProjectNode[];
@@ -21,8 +21,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onEditNode, onViewNode, onDeleteNode,
     onDuplicateNode, onAddGroup, onAddNode
 }) => {
-    const [isOpen, setIsOpen] = useState(() => window.innerWidth > 768);
+    const [isOpen, setIsOpen] = useState(true);
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, node: ProjectNode } | null>(null);
+
+    // Responsive auto-close
+    useEffect(() => {
+        if (window.innerWidth < 768) setIsOpen(false);
+    }, []);
 
     useEffect(() => {
         const handleClick = () => setContextMenu(null);
@@ -32,142 +37,119 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const handleContextMenu = (e: React.MouseEvent, node: ProjectNode) => {
         e.preventDefault();
-        e.stopPropagation(); // Stop bubbling to prevent parent context menu
+        e.stopPropagation();
         setContextMenu({ x: e.clientX, y: e.clientY, node });
     };
 
     return (
         <>
+            {/* Toggle Button */}
             <button
-                className={styles.hamburger}
                 onClick={() => setIsOpen(!isOpen)}
-                aria-label="Toggle Menu"
+                className="fixed top-4 left-4 z-50 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-lg text-white hover:bg-white/10 transition-all shadow-lg"
             >
-                {isOpen ? '✕' : '☰'}
+                {isOpen ? <X size={20} className="pointer-events-none" /> : <Menu size={20} className="pointer-events-none" />}
             </button>
 
-            <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-                <div className={styles.header}>
-                    <h1 className={styles.title}>EXPLORER</h1>
-                </div>
-
-                <div className={styles.layerList}>
-                    {nodes.map(node => (
-                        <SidebarNode
-                            key={node.id}
-                            node={node}
-                            onToggleVisibility={onToggleVisibility}
-                            onContextMenu={handleContextMenu}
-                            onEditNode={onEditNode}
-                            onViewNode={onViewNode}
-                        />
-                    ))}
-                </div>
-
-                <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button
-                        onClick={onAddGroup}
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: '#ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem'
-                        }}
+            {/* Sidebar Panel */}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.aside
+                        initial={{ x: -300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -300, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="fixed top-0 left-0 h-screen w-80 bg-slate-900/90 [backdrop-filter:blur(12px)] border-r border-white/5 z-40 flex flex-col shadow-2xl pt-16"
                     >
-                        📁 Nova Pasta
-                    </button>
+                        <div className="px-5 mb-4">
+                            <h1 className="text-xs font-bold text-slate-500 tracking-[0.2em] uppercase">Explorer</h1>
+                        </div>
 
-                    <button
-                        onClick={onEditJson}
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: '#888',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem'
-                        }}
-                    >
-                        ⚙️ JSON
-                    </button>
-                </div>
-            </aside>
+                        {/* Layer List */}
+                        <div className="flex-1 overflow-y-auto px-2 custom-scrollbar">
+                            {nodes.map(node => (
+                                <SidebarNode
+                                    key={node.id}
+                                    node={node}
+                                    onToggleVisibility={onToggleVisibility}
+                                    onContextMenu={handleContextMenu}
+                                    onEditNode={onEditNode}
+                                    onViewNode={onViewNode}
+                                />
+                            ))}
+                        </div>
 
+                        {/* Footer Controls */}
+                        <div className="p-4 border-t border-white/5 bg-black/20 flex flex-col gap-2">
+                            <button
+                                onClick={onAddGroup}
+                                className="flex items-center justify-center gap-2 p-2 rounded bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 text-sm transition-all"
+                            >
+                                <FolderPlus size={16} className="pointer-events-none" />
+                                <span>Nova Pasta</span>
+                            </button>
+                            <button
+                                onClick={onEditJson}
+                                className="flex items-center justify-center gap-2 p-2 rounded hover:bg-white/5 text-slate-500 text-xs hover:text-slate-300 transition-all border border-transparent hover:border-white/5"
+                            >
+                                <FileJson size={14} className="pointer-events-none" />
+                                <span>Editar JSON</span>
+                            </button>
+                        </div>
+                    </motion.aside>
+                )}
+            </AnimatePresence>
+
+            {/* Context Menu */}
             {contextMenu && (
-                <div style={{
-                    position: 'fixed',
-                    top: contextMenu.y,
-                    left: contextMenu.x,
-                    backgroundColor: '#252526', // VS Code style
-                    border: '1px solid #454545',
-                    borderRadius: '5px',
-                    padding: '4px 0',
-                    zIndex: 5000,
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                    minWidth: '160px',
-                    color: '#cccccc',
-                    fontSize: '13px'
-                }}>
-                    <div className="ctx-header" style={{ padding: '6px 12px', color: '#888', fontSize: '11px', textTransform: 'uppercase', borderBottom: '1px solid #333', background: '#252526' }}>
-                        {contextMenu.node.type === 'group' ? '📂 Pasta' : '📍 Item'}
+                <div
+                    className="fixed z-[9999] w-48 bg-slate-800 border border-slate-700 shadow-xl rounded-lg py-1 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                >
+                    <div className="px-3 py-1.5 text-xs font-bold text-slate-500 uppercase border-b border-slate-700/50 bg-slate-800/50">
+                        {contextMenu.node.type === 'group' ? 'Pasta' : 'Camada'}
                     </div>
 
                     {contextMenu.node.type === 'group' && (
                         <>
-                            <div
-                                style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#094771'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            <button
                                 onClick={() => onAddNode(contextMenu.node.id, 'group')}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-blue-600 hover:text-white transition-colors text-left"
                             >
-                                ➕ Nova Pasta
-                            </div>
-                            <div
-                                style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#094771'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                <FolderPlus size={14} className="pointer-events-none" /> Nova Pasta
+                            </button>
+                            <button
                                 onClick={() => onAddNode(contextMenu.node.id, 'item', 'Line')}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-blue-600 hover:text-white transition-colors text-left"
                             >
-                                ➕ Nova Linha
-                            </div>
-                            <div style={{ height: '1px', background: '#454545', margin: '4px 0' }}></div>
+                                <Plus size={14} className="pointer-events-none" /> Nova Camada
+                            </button>
+                            <div className="h-px bg-slate-700 my-1 mx-2" />
                         </>
                     )}
 
-                    <div
-                        style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#094771'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    <button
                         onClick={() => onEditNode(contextMenu.node)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-blue-600 hover:text-white transition-colors text-left"
                     >
-                        ✏️ Editar
-                    </div>
+                        <Edit size={14} className="pointer-events-none" /> Editar
+                    </button>
 
-                    <div
-                        style={{ padding: '6px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#094771'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    <button
                         onClick={() => onDuplicateNode(contextMenu.node)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-blue-600 hover:text-white transition-colors text-left"
                     >
-                        📑 Duplicar
-                    </div>
+                        <Copy size={14} className="pointer-events-none" /> Duplicar
+                    </button>
 
-                    <div style={{ height: '1px', background: '#454545', margin: '4px 0' }}></div>
+                    <div className="h-px bg-slate-700 my-1 mx-2" />
 
-                    <div
-                        style={{ padding: '6px 16px', cursor: 'pointer', color: '#ce9178', display: 'flex', alignItems: 'center', gap: '8px' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#094771'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    <button
                         onClick={() => onDeleteNode(contextMenu.node)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-600 hover:text-white transition-colors text-left"
                     >
-                        🗑️ Excluir
-                    </div>
+                        <Trash2 size={14} className="pointer-events-none" /> Excluir
+                    </button>
                 </div>
             )}
         </>

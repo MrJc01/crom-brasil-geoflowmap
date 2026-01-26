@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import type { ProjectNode } from '../types/ProjectTypes';
-import styles from './Sidebar.module.css';
+import { ChevronRight, ChevronDown, Folder, Eye, EyeOff, Info, Edit3 } from 'lucide-react';
 
 interface SidebarNodeProps {
     node: ProjectNode;
@@ -22,53 +21,50 @@ export const SidebarNode: React.FC<SidebarNodeProps> = ({
         setIsExpanded(!isExpanded);
     };
 
-    const handleCheckboxMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onToggleVisibility(node.id, e.target.checked);
+    const toggleVisibility = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onToggleVisibility(node.id, !node.visible);
     };
 
     // Styling based on depth
     const paddingLeft = `${depth * 12 + 12}px`;
 
+    // --- PASTA / GRUPO ---
     if (node.type === 'group') {
         return (
-            <div className={styles.treeNode}>
+            <div className="select-none">
                 <div
-                    className={styles.treeRow}
+                    className="flex items-center py-1.5 px-2 hover:bg-white/5 cursor-pointer text-slate-300 transition-colors group"
                     style={{ paddingLeft }}
                     onContextMenu={(e) => onContextMenu(e, node)}
                     onClick={handleToggle}
                 >
-                    <span
-                        style={{
-                            marginRight: '6px',
-                            fontSize: '0.8rem',
-                            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.2s',
-                            cursor: 'pointer',
-                            display: 'inline-block',
-                            width: '12px'
-                        }}
-                    >
-                        ▶
+                    <span className="mr-1.5 text-slate-500 hover:text-white transition-colors">
+                        {isExpanded ? <ChevronDown size={14} className="pointer-events-none" /> : <ChevronRight size={14} className="pointer-events-none" />}
                     </span>
-                    <span style={{ marginRight: '6px' }}>📁</span>
-                    <span className={styles.nodeLabel} style={{ fontWeight: 'bold', color: '#fff' }}>{node.name}</span>
 
-                    {/* Folder Visibility Toggle */}
-                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
-                        <label className={styles.miniToggle}>
-                            <input
-                                type="checkbox"
-                                checked={node.visible}
-                                onChange={handleCheckboxMessage}
-                            />
-                            <span className={styles.miniSlider}></span>
-                        </label>
+                    <span className="mr-2 text-yellow-500/80">
+                        <Folder size={14} fill="currentColor" fillOpacity={0.2} className="pointer-events-none" />
+                    </span>
+
+                    <span className="text-sm font-medium truncate flex-1 tracking-wide">
+                        {node.name}
+                    </span>
+
+                    {/* Actions Panel (Visible on Group Hover) */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                        <button
+                            onClick={toggleVisibility}
+                            className="text-slate-500 hover:text-white p-0.5 rounded cursor-pointer z-10"
+                            title={node.visible ? "Ocultar" : "Mostrar"}
+                        >
+                            {node.visible ? <Eye size={13} className="pointer-events-none" /> : <EyeOff size={13} className="pointer-events-none" />}
+                        </button>
                     </div>
                 </div>
 
                 {isExpanded && node.children && (
-                    <div className={styles.treeChildren}>
+                    <div className="border-l border-white/5 ml-[22px]">
                         {node.children.map(child => (
                             <SidebarNode
                                 key={child.id}
@@ -86,44 +82,51 @@ export const SidebarNode: React.FC<SidebarNodeProps> = ({
         );
     }
 
-    // ITEM RENDER
-    const color = node.color ? `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})` : '#ccc';
+    // --- ITEM / CAMADA ---
+    const colorStyle = node.color ? `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})` : '#94a3b8';
 
     return (
         <div
-            className={styles.treeRow}
-            style={{ paddingLeft, background: 'transparent' }}
+            className="flex items-center py-1.5 px-2 hover:bg-white/5 cursor-pointer group text-slate-400 border-b border-transparent hover:border-white/5 transition-all"
+            style={{ paddingLeft }}
             onContextMenu={(e) => onContextMenu(e, node)}
+            onClick={() => onEditNode(node)}
         >
-            <span style={{ width: '12px', marginRight: '6px' }}></span> {/* Spacer for align with folder arrows */}
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, marginRight: '8px', boxShadow: `0 0 5px ${color}` }}></div>
+            {/* Color Indicator */}
+            <div
+                className="w-2 h-2 rounded-full mr-3 shadow-[0_0_8px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
+                style={{ backgroundColor: colorStyle, boxShadow: `0 0 6px ${colorStyle}` }}
+            ></div>
 
-            <span
-                className={styles.nodeLabel}
-                onClick={() => onEditNode(node)}
-                title="Clique para editar"
-            >
+            <span className="text-sm truncate flex-1 font-light group-hover:text-white transition-colors">
                 {node.name}
             </span>
 
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Actions Panel */}
+            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                 <button
                     onClick={(e) => { e.stopPropagation(); onViewNode(node); }}
-                    style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.8rem' }}
-                    title="Ver Info"
+                    className="text-slate-600 hover:text-blue-400 p-1 rounded hover:bg-white/5"
+                    title="Informações"
                 >
-                    ℹ️
+                    <Info size={12} className="pointer-events-none" />
                 </button>
 
-                <label className={styles.toggle}>
-                    <input
-                        type="checkbox"
-                        className={styles.toggleInput}
-                        checked={node.visible}
-                        onChange={handleCheckboxMessage}
-                    />
-                    <span className={styles.toggleSlider}></span>
-                </label>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onEditNode(node); }}
+                    className="text-slate-600 hover:text-emerald-400 p-1 rounded hover:bg-white/5"
+                    title="Editar"
+                >
+                    <Edit3 size={12} className="pointer-events-none" />
+                </button>
+
+                <button
+                    onClick={toggleVisibility}
+                    className={`p-1 rounded hover:bg-white/5 ${node.visible ? 'text-slate-500 hover:text-white' : 'text-slate-600'}`}
+                    title={node.visible ? "Ocultar" : "Mostrar"}
+                >
+                    {node.visible ? <Eye size={12} className="pointer-events-none" /> : <EyeOff size={12} className="pointer-events-none" />}
+                </button>
             </div>
         </div>
     );

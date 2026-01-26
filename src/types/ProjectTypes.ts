@@ -1,6 +1,6 @@
 
 export type NodeType = 'group' | 'item';
-export type ItemType = 'Line' | 'Arc' | 'Scatterplot';
+export type ItemType = 'Line' | 'Arc' | 'Scatterplot' | 'GeoJson';
 
 export interface ProjectNode {
     id: string;
