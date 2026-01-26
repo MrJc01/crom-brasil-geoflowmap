@@ -27,13 +27,14 @@ function DeckGLOverlay(props: { layers: any[] }) {
 interface BrazilFlowMapProps {
     nodes: ProjectNode[];
     onNodeClick?: (node: ProjectNode) => void;
+    onEditNode?: (node: ProjectNode) => void;
 }
 
-export function BrazilFlowMap({ nodes, onNodeClick }: BrazilFlowMapProps) {
+export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapProps) {
     // Interactions
     const [hoverInfo, setHoverInfo] = useState<TooltipInfo | null>(null);
     const [cursor, setCursor] = useState<string>('default');
-    const [popupState, setPopupState] = useState<{ isOpen: boolean; content?: string; title?: string; position?: { x: number, y: number } }>({ isOpen: false });
+    const [popupState, setPopupState] = useState<{ isOpen: boolean; content?: string; title?: string; position?: { x: number, y: number }, nodeId?: string }>({ isOpen: false });
 
     // Helper to flatten tree to DeckGL Layers
     const getFlattenedLayers = (nodes: ProjectNode[]): any[] => {
@@ -66,7 +67,8 @@ export function BrazilFlowMap({ nodes, onNodeClick }: BrazilFlowMapProps) {
                                 isOpen: true,
                                 title: node.name,
                                 content: node.info,
-                                position: { x: info.x, y: info.y }
+                                position: { x: info.x, y: info.y },
+                                nodeId: node.id
                             });
                             // Close tooltip when clicking
                             setHoverInfo(null);
@@ -81,25 +83,29 @@ export function BrazilFlowMap({ nodes, onNodeClick }: BrazilFlowMapProps) {
                         getTargetPosition: (d: any) => d.target,
                         getSourceColor: [0, 0, 0, 0],
                         getTargetColor: node.color || [255, 255, 255],
-                        getWidth: 3,
+                        getWidth: (d: any) => d.width || 3,
                     }));
                 } else if (node.itemType === 'Scatterplot') {
                     layers.push(new ScatterplotLayer({
                         ...commonProps,
                         getPosition: (d: any) => d.coordinates,
                         getFillColor: node.color || [255, 255, 0],
-                        getRadius: 30000,
+                        getRadius: (d: any) => d.radius || 30000, // Keep meters for radius usually? Or pixels? Radius is usually meters in Geo.
+                        radiusScale: 1,
+                        radiusMinPixels: 3,
                         opacity: 0.9,
                         stroked: true,
                         getLineColor: [255, 255, 255],
-                        getLineWidth: 2000
+                        getLineWidth: 2
                     }));
                 } else if (node.itemType === 'Line') {
                     layers.push(new PathLayer({
                         ...commonProps,
                         getPath: (d: any) => d.path,
                         getColor: node.color || [0, 255, 255],
-                        getWidth: 3000,
+                        getWidth: (d: any) => d.width || 3,
+                        widthUnits: 'pixels', // Critical for "3" to mean 3px
+                        widthMinPixels: 2,
                         capRounded: true,
                         jointRounded: true
                     }));
@@ -142,9 +148,30 @@ export function BrazilFlowMap({ nodes, onNodeClick }: BrazilFlowMapProps) {
                 position={popupState.position}
                 onClose={() => setPopupState({ isOpen: false })}
                 onEdit={() => {
-                    // This creates a circular dependency or requires lifting Popup state too.
-                    // For now, let's keep view-only in map, edit via sidebar.
-                    alert("Para editar, use a Sidebar lateral.");
+                    const node2Edit = nodes.find(n => n.id === popupState.nodeId) ||
+                        nodes.flatMap(n => n.children || []).find(c => c.id === popupState.nodeId); // Simple Search
+
+                    // Better search needed for deep trees? 
+                    // Let's pass ID up instead.
+                    if (onEditNode && popupState.nodeId) {
+                        // We need the full node object. 
+                        // Since we flattened logic inside render, finding it again is slightly inefficient but safe.
+                        // Actually, we can just pass a synthetic node or fetch from prop if onEditNode accepts ID?
+                        // The prop expects Node. Let's find it properly using a helper if available, or just pass {id: ...} if type allows (it doesn't).
+                        // Quick recursive finder:
+                        const findN = (list: ProjectNode[], id: string): ProjectNode | undefined => {
+                            for (const n of list) {
+                                if (n.id === id) return n;
+                                if (n.children) {
+                                    const found = findN(n.children, id);
+                                    if (found) return found;
+                                }
+                            }
+                        }
+                        const found = findN(nodes, popupState.nodeId);
+                        if (found) onEditNode(found);
+                    }
+                    setPopupState({ isOpen: false });
                 }}
             />
         </div>

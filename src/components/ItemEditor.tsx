@@ -72,17 +72,40 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
             const newData = { ...prev };
 
             if (isPath) {
-                const newPath = [...newData[key]];
+                // Ensure path exists
+                const newPath = Array.isArray(newData[key]) ? [...newData[key]] : [];
+                // Ensure sub-array exists
+                if (!newPath[pathIndex]) newPath[pathIndex] = [0, 0];
+
                 const newPoint = [...newPath[pathIndex]];
                 newPoint[index] = value;
                 newPath[pathIndex] = newPoint;
                 newData[key] = newPath;
             } else {
-                const newCoord = [...newData[key]];
+                const newCoord = [...(newData[key] || [0, 0])];
                 newCoord[index] = value;
                 newData[key] = newCoord;
             }
             return newData;
+        });
+    };
+
+    const handleAddPathPoint = (key: string) => {
+        setFormData((prev: any) => {
+            const currentPath = Array.isArray(prev[key]) ? prev[key] : [];
+            const lastPoint = currentPath.length > 0 ? currentPath[currentPath.length - 1] : [-46, -23];
+            // Add a new point slighty offset from the last one for visibility
+            const newPoint = [lastPoint[0] + 0.5, lastPoint[1] + 0.5];
+            return { ...prev, [key]: [...currentPath, newPoint] };
+        });
+    };
+
+    const handleRemovePathPoint = (key: string, index: number) => {
+        setFormData((prev: any) => {
+            const currentPath = [...(prev[key] || [])];
+            if (currentPath.length <= 2) return prev; // Keep at least 2 points for a line
+            currentPath.splice(index, 1);
+            return { ...prev, [key]: currentPath };
         });
     };
 
@@ -157,12 +180,23 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
         label: string,
         coords: number[],
         onChange: (idx: number, val: number) => void,
-        geoTarget: any
+        geoTarget: any,
+        onRemove?: () => void
     ) => (
         <div key={keyProp} className="mb-4 bg-white/5 p-3 rounded-lg border border-white/5">
             <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-bold text-emerald-400">
+                <label className="text-sm font-bold text-emerald-400 flex items-center gap-2">
                     {label}
+                    {onRemove && (
+                        <button
+                            type="button"
+                            onClick={onRemove}
+                            className="text-red-500 hover:text-red-400 text-[10px] uppercase font-bold tracking-wider"
+                            title="Remover este ponto"
+                        >
+                            (Remover)
+                        </button>
+                    )}
                 </label>
                 <button
                     type="button"
@@ -181,7 +215,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                     <input
                         type="number"
                         step="any"
-                        value={coords[1]} // DeckGL uses [Lon, Lat]
+                        value={coords ? coords[1] : 0} // DeckGL uses [Lon, Lat]
                         onChange={(e) => onChange(1, Number(e.target.value))}
                         className="w-full bg-black/20 border border-white/10 rounded px-2 py-1 text-sm text-slate-200 font-mono focus:border-emerald-500/50 outline-none"
                     />
@@ -191,7 +225,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                     <input
                         type="number"
                         step="any"
-                        value={coords[0]}
+                        value={coords ? coords[0] : 0}
                         onChange={(e) => onChange(0, Number(e.target.value))}
                         className="w-full bg-black/20 border border-white/10 rounded px-2 py-1 text-sm text-slate-200 font-mono focus:border-emerald-500/50 outline-none"
                     />
@@ -259,18 +293,29 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                 { key: 'coordinates' }
             );
         }
-        if (key === 'path' && Array.isArray(value) && Array.isArray(value[0])) {
-            const lastIdx = value.length - 1;
+        if (key === 'path' && Array.isArray(value)) {
+            // New Multi-point Path Renderer
             return (
-                <div key={key}>
-                    {renderCoordinateInputs(`${key}-start`, 'Origem (Início)', value[0],
-                        (idx, val) => handleCoordinateChange(key, idx, val, true, 0),
-                        { key: 'path', isPath: true, pathIndex: 0 }
-                    )}
-                    {renderCoordinateInputs(`${key}-end`, 'Destino (Final)', value[lastIdx],
-                        (idx, val) => handleCoordinateChange(key, idx, val, true, lastIdx),
-                        { key: 'path', isPath: true, pathIndex: lastIdx }
-                    )}
+                <div key={key} className="mb-4 border-l-2 border-emerald-500/30 pl-3">
+                    <label className="block text-xs font-bold text-emerald-400 mb-2 uppercase tracking-wide">Rota / Waypoints</label>
+
+                    {value.map((point: number[], idx: number) => (
+                        renderCoordinateInputs(`${key}-${idx}`, `Ponto ${idx + 1} ${idx === 0 ? '(Início)' : idx === value.length - 1 ? '(Final)' : ''}`,
+                            point,
+                            (coordIdx, val) => handleCoordinateChange(key, coordIdx, val, true, idx),
+                            { key: 'path', isPath: true, pathIndex: idx },
+                            // Allow removal if more than 2 points
+                            value.length > 2 ? () => handleRemovePathPoint(key, idx) : undefined
+                        )
+                    ))}
+
+                    <button
+                        type="button"
+                        onClick={() => handleAddPathPoint(key)}
+                        className="w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 border-dashed rounded flex items-center justify-center gap-2 transition-all text-xs font-bold uppercase"
+                    >
+                        + Adicionar Ponto à Rota
+                    </button>
                 </div>
             );
         }
@@ -309,7 +354,10 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
     };
 
     return (
-        <div className="fixed top-4 right-4 w-96 max-h-[90vh] flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-50 animate-in fade-in slide-in-from-right-4">
+        <div
+            onClick={(e) => e.stopPropagation()}
+            className="fixed top-4 right-4 w-96 max-h-[90vh] flex flex-col bg-slate-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-50 animate-in fade-in slide-in-from-right-4"
+        >
             <div className="flex justify-between items-center p-4 border-b border-white/5">
                 <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
                     Editar {layerType === 'group' ? 'Pasta' : 'Camada'}
@@ -331,11 +379,16 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                             onChange={(e) => handleTypeChange(e.target.value as ItemType)}
                             className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 outline-none"
                         >
-                            <option value="Line">Linha (Rota)</option>
+                            <option value="Line">Linha (Rota Completa)</option>
                             <option value="Arc">Arco (Origem-Destino)</option>
                             <option value="Scatterplot">Ponto (Scatterplot)</option>
                             {/* <option value="GeoJson">GeoJson</option> */}
                         </select>
+                        {currentItemType === 'Arc' && (
+                            <div className="mt-2 text-[10px] text-slate-500 p-2 bg-white/5 rounded border border-white/5">
+                                <span className="text-amber-400 font-bold">Nota:</span> Arcos conectam 2 pontos. Use "Linha" para rotas complexas.
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

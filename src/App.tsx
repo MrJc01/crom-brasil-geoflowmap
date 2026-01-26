@@ -195,6 +195,7 @@ function App() {
         <BrazilFlowMap
           nodes={projectTree}
           onNodeClick={(n) => setViewingNodeId(n.id)}
+          onEditNode={(n) => setEditingNodeId(n.id)}
         />
       </div>
 
