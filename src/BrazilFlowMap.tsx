@@ -37,6 +37,30 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
     const [cursor, setCursor] = useState<string>('default');
     const [popupState, setPopupState] = useState<{ isOpen: boolean; content?: string; title?: string; position?: { x: number, y: number }, nodeId?: string }>({ isOpen: false });
 
+    // Helper: Interpolate Color
+    const interpolateColor = (color1: number[], color2: number[], factor: number): [number, number, number] => {
+        const result = color1.slice() as [number, number, number];
+        for (let i = 0; i < 3; i++) {
+            result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+        }
+        return result;
+    };
+
+    // Helper: Get Path Gradient Colors
+    const getPathGradient = (node: ProjectNode): any => {
+        const path = node.data?.path || [];
+        if (path.length < 2) return node.color || [0, 255, 255];
+
+        const startColor = node.color || [0, 255, 255];
+        // Fallback to startColor if targetColor not set (though UI should enforce it)
+        const endColor = node.targetColor || node.color || [0, 255, 255];
+
+        return path.map((_: any, index: number) => {
+            const factor = index / (path.length - 1);
+            return interpolateColor(startColor, endColor, factor);
+        });
+    };
+
     // Helper to flatten tree to DeckGL Layers
     const getFlattenedLayers = (nodes: ProjectNode[]): any[] => {
         let layers: any[] = [];
@@ -104,10 +128,12 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                     }));
                 } else if (node.itemType === 'Line') {
                     const isDashed = node.appearance?.type === 'dashed';
+                    const isGradient = node.appearance?.colorType === 'gradient';
+
                     layers.push(new PathLayer({
                         ...commonProps,
                         getPath: (d: any) => d.path,
-                        getColor: node.color || [0, 255, 255],
+                        getColor: isGradient ? getPathGradient(node) : (node.color || [0, 255, 255]),
                         getWidth: (d: any) => d.width || 3,
                         widthUnits: 'pixels', // Critical for "3" to mean 3px
                         widthMinPixels: 2,

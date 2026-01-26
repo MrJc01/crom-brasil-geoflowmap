@@ -12,6 +12,13 @@ export interface ProjectNode {
     // Item Specifics
     itemType?: ItemType;
     color?: [number, number, number];
+    targetColor?: [number, number, number];
+    appearance?: {
+        type?: 'solid' | 'dashed';
+        colorType?: 'solid' | 'gradient';
+        dash?: [number, number];
+    };
+    width?: number;
     data?: any;
     info?: string;
 }

@@ -234,33 +234,56 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
         </div>
     );
 
-    const renderColorInput = (key: string, value: [number, number, number], onChange: (val: [number, number, number]) => void) => (
-        <div key={key} className="mb-4">
-            <label className="block text-xs text-slate-400 mb-1 capitalize">Cor (RGB)</label>
-            <div className="flex gap-2">
-                {[0, 1, 2].map(idx => (
-                    <div key={idx} className="flex-1">
+    // Color Helpers
+    const rgbToHex = (r: number, g: number, b: number) => {
+        return "#" + [r, g, b].map(x => {
+            const hex = x.toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+        }).join("");
+    };
+
+    const hexToRgb = (hex: string): [number, number, number] => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+            parseInt(result[1], 16),
+            parseInt(result[2], 16),
+            parseInt(result[3], 16)
+        ] : [0, 0, 0];
+    };
+
+    const renderColorInput = (key: string, value: [number, number, number], onChange: (val: [number, number, number]) => void) => {
+        const hexColor = value ? rgbToHex(value[0], value[1], value[2]) : '#000000';
+
+        return (
+            <div key={key} className="mb-4">
+                <label className="block text-xs text-slate-400 mb-1 capitalize">Cor</label>
+                <div className="flex gap-2 items-center">
+                    <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 shadow-sm cursor-pointer hover:border-emerald-500/50 transition-colors">
                         <input
-                            type="number"
-                            min="0" max="255"
-                            value={value ? value[idx] : 0}
-                            onChange={(e) => {
-                                const newValue = [...(value || [0, 0, 0])] as [number, number, number];
-                                newValue[idx] = Number(e.target.value);
-                                onChange(newValue);
-                            }}
-                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-sm text-center text-slate-200 focus:border-emerald-500/50 outline-none"
+                            type="color"
+                            value={hexColor}
+                            onChange={(e) => onChange(hexToRgb(e.target.value))}
+                            className="absolute -top-2 -left-2 w-16 h-16 p-0 border-0 cursor-pointer"
                         />
                     </div>
-                ))}
-                <div
-                    className="w-8 h-8 rounded border border-white/10"
-                    style={{ backgroundColor: value ? `rgb(${value[0]},${value[1]},${value[2]})` : 'transparent' }}
-                >
+
+                    <div className="flex-1">
+                        <input
+                            type="text"
+                            value={hexColor}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^#[0-9A-F]{6}$/i.test(val)) {
+                                    onChange(hexToRgb(val));
+                                }
+                            }}
+                            className="w-full bg-black/20 border border-white/10 rounded px-2 py-2 text-sm font-mono text-slate-200 outline-none focus:border-emerald-500/50 uppercase"
+                        />
+                    </div>
                 </div>
             </div>
-        </div >
-    );
+        );
+    };
 
     const renderAppearanceSection = () => (
         <div className="mb-4 pt-4 border-t border-white/5">
@@ -287,8 +310,8 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                 </div>
             )}
 
-            {/* COLOR MODE (Solid / Gradient) - Valid for Arcs */}
-            {currentItemType === 'Arc' && (
+            {/* COLOR MODE (Solid / Gradient) - Valid for Arcs and Lines */}
+            {(currentItemType === 'Arc' || currentItemType === 'Line') && (
                 <div className="mb-3">
                     <label className="block text-[10px] text-slate-500 mb-1">Modo de Cor</label>
                     <select
