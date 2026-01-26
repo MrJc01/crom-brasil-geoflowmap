@@ -1,4 +1,3 @@
-
 export type NodeType = 'group' | 'item';
 export type ItemType = 'Line' | 'Arc' | 'Scatterplot' | 'GeoJson';
 
@@ -19,6 +18,7 @@ export interface ProjectNode {
         dash?: [number, number];
     };
     width?: number;
+    value?: number; // Added for standardization
     data?: any;
     info?: string;
 }

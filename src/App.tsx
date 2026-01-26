@@ -17,7 +17,7 @@ const MOCK_TREE: ProjectNode[] = [
     visible: true,
     children: LAYERS_CONFIG.filter(l => l.type === 'Arc').map(l => ({
       id: l.id,
-      name: l.label,
+      name: l.name,
       type: 'item',
       itemType: 'Arc',
       visible: l.visible,
@@ -33,9 +33,9 @@ const MOCK_TREE: ProjectNode[] = [
     visible: true,
     children: LAYERS_CONFIG.filter(l => l.type !== 'Arc').map(l => ({
       id: l.id,
-      name: l.label,
+      name: l.name,
       type: 'item',
-      itemType: (l.type as string) === 'GeoJson' ? 'Line' : l.type as ItemType,
+      itemType: l.type as ItemType,
       visible: l.visible,
       color: l.color,
       data: Array.isArray(l.data) ? l.data[0] : l.data,
@@ -45,7 +45,6 @@ const MOCK_TREE: ProjectNode[] = [
 ];
 
 // --- HELPER FUNCTIONS ---
-// (Moved from BrazilFlowMap)
 const updateNodeInTree = (nodes: ProjectNode[], id: string, updates: Partial<ProjectNode>): ProjectNode[] => {
   return nodes.map(node => {
     if (node.id === id) return { ...node, ...updates };
@@ -150,15 +149,14 @@ function App() {
     const id = `${type}-${Date.now()}`;
     const newNode: ProjectNode = {
       id,
-      name: type === 'group' ? 'Nova Pasta' : `Nova Linha (${itemType})`,
+      name: type === 'group' ? 'Nova Pasta' : `Novo Item (${itemType})`,
       type: type,
       itemType: itemType,
       visible: true,
       children: [],
-      data: itemType === 'Line' ?
-        { path: [[-46, -23], [-43, -22]], name: 'Nova Rota' } :
-        itemType === 'Arc' ? { source: [-46, -23], target: [-43, -22], value: 100 } :
-          { coordinates: [-46, -23] }
+      data: itemType === 'Line' || itemType === 'Arc' ?
+        { source: [-55, -12], target: [-43, -22] } :
+        { coordinates: [-55, -12] }
     };
     setProjectTree(prev => insertNodeIntoTree(prev, parentId, newNode));
 
@@ -170,9 +168,10 @@ function App() {
 
   const handleSaveEditor = (formData: any) => {
     if (!editingNodeId) return;
-    const { name, color, info, itemType, ...itemData } = formData; // Extract itemType
+    // Destructuring carefully to separate Node properties from Data properties
+    const { name, color, info, itemType, value, width, ...itemData } = formData;
     setProjectTree(prev => updateNodeInTree(prev, editingNodeId, {
-      name, color, info, itemType, data: itemData // Update itemType in node
+      name, color, info, itemType, value, width, data: itemData
     }));
     setEditingNodeId(null);
   };
@@ -183,6 +182,9 @@ function App() {
     name: editingNode.name,
     color: editingNode.color,
     info: editingNode.info,
+    itemType: editingNode.itemType,
+    value: editingNode.value,
+    width: editingNode.width,
     ...editingNode.data
   } : null;
 
@@ -218,6 +220,7 @@ function App() {
         node={viewingNode}
         onClose={() => setViewingNodeId(null)}
         onEdit={(n) => { setViewingNodeId(null); setEditingNodeId(n.id); }}
+      // Pass a default "Line" type for new items if not specified, or let sidebar handle logic
       />
 
       <JsonEditor

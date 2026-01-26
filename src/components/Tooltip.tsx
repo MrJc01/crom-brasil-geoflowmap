@@ -52,6 +52,24 @@ export const Tooltip: React.FC<TooltipProps> = ({ info }) => {
                 </>
             );
         }
+        if (object.name) {
+            // Generic fallback for items with name (like Lines created in editor)
+            return (
+                <>
+                    <div style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '4px' }}>INFO</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>{object.name}</div>
+                    {object.value && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', gap: '12px' }}>
+                            <span>Valor:</span>
+                            <span style={{ color: '#00ff80', fontWeight: 'bold' }}>{object.value}</span>
+                        </div>
+                    )}
+                    {object.info && (
+                        <div style={{ fontSize: '0.9rem', marginTop: '4px', whiteSpace: 'pre-wrap' }}>{object.info}</div>
+                    )}
+                </>
+            );
+        }
         return <pre>{JSON.stringify(object, null, 2)}</pre>;
     };
 

@@ -2,22 +2,12 @@ import { useMemo, useState } from 'react';
 import Map, { useControl } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { ArcLayer, ScatterplotLayer, PathLayer, GeoJsonLayer } from '@deck.gl/layers';
-import { PathStyleExtension } from '@deck.gl/extensions';
+import { ArcLayer, ScatterplotLayer, LineLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { ProjectNode } from './types/ProjectTypes';
 import { Tooltip } from './components/Tooltip';
 import type { TooltipInfo } from './components/Tooltip';
-import { InfoPopup } from './components/InfoPopup';
-
-const INITIAL_VIEW_STATE = {
-    longitude: -55,
-    latitude: -15,
-    zoom: 3.5,
-    pitch: 45,
-    bearing: 0
-};
 
 function DeckGLOverlay(props: { layers: any[] }) {
     const overlay = useControl<MapboxOverlay>(() => new MapboxOverlay(props));
@@ -32,36 +22,9 @@ interface BrazilFlowMapProps {
 }
 
 export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapProps) {
-    // Interactions
     const [hoverInfo, setHoverInfo] = useState<TooltipInfo | null>(null);
     const [cursor, setCursor] = useState<string>('default');
-    const [popupState, setPopupState] = useState<{ isOpen: boolean; content?: string; title?: string; position?: { x: number, y: number }, nodeId?: string }>({ isOpen: false });
 
-    // Helper: Interpolate Color
-    const interpolateColor = (color1: number[], color2: number[], factor: number): [number, number, number] => {
-        const result = color1.slice() as [number, number, number];
-        for (let i = 0; i < 3; i++) {
-            result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
-        }
-        return result;
-    };
-
-    // Helper: Get Path Gradient Colors
-    const getPathGradient = (node: ProjectNode): any => {
-        const path = node.data?.path || [];
-        if (path.length < 2) return node.color || [0, 255, 255];
-
-        const startColor = node.color || [0, 255, 255];
-        // Fallback to startColor if targetColor not set (though UI should enforce it)
-        const endColor = node.targetColor || node.color || [0, 255, 255];
-
-        return path.map((_: any, index: number) => {
-            const factor = index / (path.length - 1);
-            return interpolateColor(startColor, endColor, factor);
-        });
-    };
-
-    // Helper to flatten tree to DeckGL Layers
     const getFlattenedLayers = (nodes: ProjectNode[]): any[] => {
         let layers: any[] = [];
 
@@ -73,13 +36,23 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
             } else if (node.type === 'item') {
                 const layerData = [node.data];
 
+                // Generic accessor for standardized props
                 const commonProps = {
                     id: node.id,
                     data: layerData,
                     pickable: true,
                     onHover: (info: any) => {
-                        if (info.object && !popupState.isOpen) {
-                            setHoverInfo({ object: info.object, x: info.x, y: info.y });
+                        if (info.object) {
+                            setHoverInfo({
+                                object: {
+                                    ...info.object,
+                                    name: node.name,
+                                    value: node.value,
+                                    info: node.info
+                                },
+                                x: info.x,
+                                y: info.y
+                            });
                             setCursor('pointer');
                         } else {
                             setHoverInfo(null);
@@ -87,72 +60,45 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                         }
                     },
                     onClick: (info: any) => {
-                        if (info.object) {
-                            setPopupState({
-                                isOpen: true,
-                                title: node.name,
-                                content: node.info,
-                                position: { x: info.x, y: info.y },
-                                nodeId: node.id
-                            });
-                            // Close tooltip when clicking
-                            setHoverInfo(null);
+                        if (info.object && onNodeClick) {
+                            onNodeClick(node);
                         }
                     }
                 };
 
+                // Robust Color Accessor
+                const getColor = (d: any): [number, number, number] => {
+                    const c = node.color;
+                    if (Array.isArray(c) && c.length >= 3) {
+                        return c as [number, number, number];
+                    }
+                    return [255, 0, 255];
+                };
+
                 if (node.itemType === 'Arc') {
-                    const isGradient = node.appearance?.colorType === 'gradient';
                     layers.push(new ArcLayer({
                         ...commonProps,
                         getSourcePosition: (d: any) => d.source,
                         getTargetPosition: (d: any) => d.target,
-                        // If Fixed: Source and Target colors are the same (d.color)
-                        // If Gradient: Source is d.color, Target is d.targetColor (or fallback to d.color)
-                        getSourceColor: node.color || [255, 255, 255],
-                        getTargetColor: isGradient ? (node.targetColor || node.color || [255, 255, 255]) : (node.color || [255, 255, 255]),
-                        getWidth: (d: any) => d.width || 3,
+                        getSourceColor: getColor,
+                        getTargetColor: (d: any) => node.targetColor || getColor(d),
+                        getWidth: (d: any) => node.width || 3,
+                    }));
+                } else if (node.itemType === 'Line') {
+                    layers.push(new LineLayer({
+                        ...commonProps,
+                        getSourcePosition: (d: any) => d.source,
+                        getTargetPosition: (d: any) => d.target,
+                        getColor: getColor,
+                        getWidth: (d: any) => node.width || 3,
                     }));
                 } else if (node.itemType === 'Scatterplot') {
                     layers.push(new ScatterplotLayer({
                         ...commonProps,
                         getPosition: (d: any) => d.coordinates,
-                        getFillColor: node.color || [255, 255, 0],
-                        getRadius: (d: any) => d.radius || 30000, // Keep meters for radius usually? Or pixels? Radius is usually meters in Geo.
-                        radiusScale: 1,
-                        radiusMinPixels: 3,
-                        opacity: 0.9,
-                        stroked: true,
-                        getLineColor: [255, 255, 255],
-                        getLineWidth: 2
-                    }));
-                } else if (node.itemType === 'Line') {
-                    const isDashed = node.appearance?.type === 'dashed';
-                    const isGradient = node.appearance?.colorType === 'gradient';
-
-                    layers.push(new PathLayer({
-                        ...commonProps,
-                        getPath: (d: any) => d.path,
-                        getColor: isGradient ? getPathGradient(node) : (node.color || [0, 255, 255]),
-                        getWidth: (d: any) => d.width || 3,
-                        widthUnits: 'pixels', // Critical for "3" to mean 3px
-                        widthMinPixels: 2,
-                        capRounded: true,
-                        jointRounded: true,
-                        // Extensions
-                        extensions: [new PathStyleExtension({ dash: true })],
-                        getDashArray: isDashed ? (node.appearance?.dash || [3, 2]) : [0, 0],
-                        dashJustified: true
-                    }));
-                }
-                // Add GeoJson support as requested in prompt, though data config usually maps to Line currently.
-                // If we had explicit GeoJson type:
-                else if (node.itemType === 'GeoJson' as any) { // Type casting if needed or update ItemType
-                    layers.push(new GeoJsonLayer({
-                        ...commonProps,
-                        getLineColor: node.color || [255, 255, 255],
-                        getFillColor: [0, 0, 0, 0], // transparent fill for now
-                        lineWidthMinPixels: 2
+                        getFillColor: getColor,
+                        getRadius: (d: any) => (node.value ? node.value * 100 : 30000),
+                        radiusMinPixels: 4,
                     }));
                 }
             }
@@ -161,54 +107,25 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
         return layers;
     };
 
-    const deckLayers = useMemo(() => getFlattenedLayers(nodes), [nodes, popupState.isOpen]);
+    const layers = useMemo(() => getFlattenedLayers(nodes), [nodes]);
 
     return (
-        <div style={{ width: '100%', height: '100%', cursor }}>
-            <Map
-                initialViewState={INITIAL_VIEW_STATE}
-                mapLib={maplibregl}
-                mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-                style={{ width: '100%', height: '100%' }}
-            >
-                <DeckGLOverlay layers={deckLayers} />
-            </Map>
-
-            {!popupState.isOpen && <Tooltip info={hoverInfo} />}
-
-            <InfoPopup
-                isOpen={popupState.isOpen}
-                title={popupState.title}
-                content={popupState.content}
-                position={popupState.position}
-                onClose={() => setPopupState({ isOpen: false })}
-                onEdit={() => {
-                    const node2Edit = nodes.find(n => n.id === popupState.nodeId) ||
-                        nodes.flatMap(n => n.children || []).find(c => c.id === popupState.nodeId); // Simple Search
-
-                    // Better search needed for deep trees? 
-                    // Let's pass ID up instead.
-                    if (onEditNode && popupState.nodeId) {
-                        // We need the full node object. 
-                        // Since we flattened logic inside render, finding it again is slightly inefficient but safe.
-                        // Actually, we can just pass a synthetic node or fetch from prop if onEditNode accepts ID?
-                        // The prop expects Node. Let's find it properly using a helper if available, or just pass {id: ...} if type allows (it doesn't).
-                        // Quick recursive finder:
-                        const findN = (list: ProjectNode[], id: string): ProjectNode | undefined => {
-                            for (const n of list) {
-                                if (n.id === id) return n;
-                                if (n.children) {
-                                    const found = findN(n.children, id);
-                                    if (found) return found;
-                                }
-                            }
-                        }
-                        const found = findN(nodes, popupState.nodeId);
-                        if (found) onEditNode(found);
-                    }
-                    setPopupState({ isOpen: false });
-                }}
-            />
-        </div>
+        <Map
+            initialViewState={{
+                longitude: -55,
+                latitude: -15,
+                zoom: 3.5,
+                pitch: 45,
+                bearing: 0
+            }}
+            style={{ width: '100vw', height: '100vh' }}
+            mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+            cursor={cursor}
+        >
+            <DeckGLOverlay layers={layers} />
+            {hoverInfo && hoverInfo.object && (
+                <Tooltip info={hoverInfo} />
+            )}
+        </Map>
     );
 }
