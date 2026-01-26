@@ -3,6 +3,7 @@ import Map, { useControl } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import { ArcLayer, ScatterplotLayer, PathLayer, GeoJsonLayer } from '@deck.gl/layers';
+import { PathStyleExtension } from '@deck.gl/extensions';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { ProjectNode } from './types/ProjectTypes';
@@ -77,12 +78,15 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                 };
 
                 if (node.itemType === 'Arc') {
+                    const isGradient = node.appearance?.colorType === 'gradient';
                     layers.push(new ArcLayer({
                         ...commonProps,
                         getSourcePosition: (d: any) => d.source,
                         getTargetPosition: (d: any) => d.target,
-                        getSourceColor: [0, 0, 0, 0],
-                        getTargetColor: node.color || [255, 255, 255],
+                        // If Fixed: Source and Target colors are the same (d.color)
+                        // If Gradient: Source is d.color, Target is d.targetColor (or fallback to d.color)
+                        getSourceColor: node.color || [255, 255, 255],
+                        getTargetColor: isGradient ? (node.targetColor || node.color || [255, 255, 255]) : (node.color || [255, 255, 255]),
                         getWidth: (d: any) => d.width || 3,
                     }));
                 } else if (node.itemType === 'Scatterplot') {
@@ -99,6 +103,7 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                         getLineWidth: 2
                     }));
                 } else if (node.itemType === 'Line') {
+                    const isDashed = node.appearance?.type === 'dashed';
                     layers.push(new PathLayer({
                         ...commonProps,
                         getPath: (d: any) => d.path,
@@ -107,7 +112,11 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                         widthUnits: 'pixels', // Critical for "3" to mean 3px
                         widthMinPixels: 2,
                         capRounded: true,
-                        jointRounded: true
+                        jointRounded: true,
+                        // Extensions
+                        extensions: [new PathStyleExtension({ dash: true })],
+                        getDashArray: isDashed ? (node.appearance?.dash || [3, 2]) : [0, 0],
+                        dashJustified: true
                     }));
                 }
                 // Add GeoJson support as requested in prompt, though data config usually maps to Line currently.

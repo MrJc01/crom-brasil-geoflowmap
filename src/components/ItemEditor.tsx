@@ -256,13 +256,71 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                 <div
                     className="w-8 h-8 rounded border border-white/10"
                     style={{ backgroundColor: value ? `rgb(${value[0]},${value[1]},${value[2]})` : 'transparent' }}
-                />
+                >
+                </div>
             </div>
+        </div >
+    );
+
+    const renderAppearanceSection = () => (
+        <div className="mb-4 pt-4 border-t border-white/5">
+            <label className="block text-xs font-bold text-emerald-400 mb-3 uppercase tracking-wider">Aparência</label>
+
+            {/* LINE TYPE (Solid / Dashed) - Valid for Lines & maybe Arcs if extension supported it universally, but mainly Lines */}
+            {currentItemType === 'Line' && (
+                <div className="mb-3">
+                    <label className="block text-[10px] text-slate-500 mb-1">Estilo da Linha</label>
+                    <select
+                        value={formData.appearance?.type || 'solid'}
+                        onChange={(e) => {
+                            const newType = e.target.value;
+                            setFormData((prev: any) => ({
+                                ...prev,
+                                appearance: { ...prev.appearance, type: newType }
+                            }));
+                        }}
+                        className="w-full bg-black/20 border border-white/10 rounded px-2 py-1.5 text-sm text-slate-200 outline-none focus:border-emerald-500/50"
+                    >
+                        <option value="solid">Sólido</option>
+                        <option value="dashed">Pontilhado</option>
+                    </select>
+                </div>
+            )}
+
+            {/* COLOR MODE (Solid / Gradient) - Valid for Arcs */}
+            {currentItemType === 'Arc' && (
+                <div className="mb-3">
+                    <label className="block text-[10px] text-slate-500 mb-1">Modo de Cor</label>
+                    <select
+                        value={formData.appearance?.colorType || 'solid'}
+                        onChange={(e) => {
+                            const newType = e.target.value;
+                            setFormData((prev: any) => ({
+                                ...prev,
+                                appearance: { ...prev.appearance, colorType: newType }
+                            }));
+                        }}
+                        className="w-full bg-black/20 border border-white/10 rounded px-2 py-1.5 text-sm text-slate-200 outline-none focus:border-emerald-500/50"
+                    >
+                        <option value="solid">Cor Fixa (Sólida)</option>
+                        <option value="gradient">Gradiente (Origem → Destino)</option>
+                    </select>
+
+                    {/* Gradient Target Color Picker */}
+                    {formData.appearance?.colorType === 'gradient' && (
+                        <div className="mt-2 pl-2 border-l border-white/10">
+                            {renderColorInput('targetColor', formData.targetColor, (val) => handleChange('targetColor', val))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 
     const renderField = (key: string, value: any) => {
         if (key === 'itemType') return null;
+        if (key === 'appearance') return null; // Handle separately
+        if (key === 'targetColor') return null; // Handle inside Appearance section
 
         // Specific fields
         if (key === 'color' && Array.isArray(value)) {
@@ -394,6 +452,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
             </div>
 
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-0">
+                {renderAppearanceSection()}
                 {Object.keys(formData).map(key => renderField(key, formData[key]))}
 
                 <div className="mt-4 pt-4 border-t border-white/5">

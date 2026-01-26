@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@deck.gl/extensions": "^9.2.6",
     "@deck.gl/mapbox": "^9.2.6",
     "deck.gl": "^9.2.6",
     "framer-motion": "^12.29.0",
