@@ -3,6 +3,7 @@ import { BrazilFlowMap } from './BrazilFlowMap';
 import { Sidebar } from './components/Sidebar';
 import { ItemEditor } from './components/ItemEditor';
 import { JsonEditor } from './components/JsonEditor';
+import { InfoModal } from './components/InfoModal';
 import type { ProjectNode, ItemType } from './types/ProjectTypes';
 import { LAYERS_CONFIG } from './data/layersConfig';
 import './App.css';
@@ -112,18 +113,12 @@ const findNode = (nodes: ProjectNode[], id: string): ProjectNode | null => {
   return null;
 };
 
+// STATE
 function App() {
-  // STATE
   const [projectTree, setProjectTree] = useState<ProjectNode[]>(MOCK_TREE);
   const [isJsonEditorOpen, setJsonEditorOpen] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-
-  // Popup State (Controlled by Map interactions, but accessed here for simplicity if needed, 
-  // actually, Map should handle its own popups for clicks on features, 
-  // but we need to close them when doing other things)
-  // For now, let's keep Popup inside BrazilFlowMap or let BrazilFlowMap control it exclusively
-  // But wait, if I edit an item from Sidebar, I might want to close popups.
-  // Let's pass a signal or just let them be independent.
+  const [viewingNodeId, setViewingNodeId] = useState<string | null>(null);
 
   // HANDLERS
   const handleToggleVisibility = (id: string, visible: boolean) => {
@@ -191,11 +186,16 @@ function App() {
     ...editingNode.data
   } : null;
 
+  const viewingNode = viewingNodeId ? findNode(projectTree, viewingNodeId) : null;
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950">
       {/* MAP LAYOUT (Z-0) */}
       <div className="absolute inset-0 z-0">
-        <BrazilFlowMap nodes={projectTree} />
+        <BrazilFlowMap
+          nodes={projectTree}
+          onNodeClick={(n) => setViewingNodeId(n.id)}
+        />
       </div>
 
       {/* UI OVERLAY (Z-10+) */}
@@ -204,14 +204,21 @@ function App() {
         onToggleVisibility={handleToggleVisibility}
         onEditJson={() => setJsonEditorOpen(true)}
         onEditNode={(n) => setEditingNodeId(n.id)}
-        onViewNode={(n) => alert('View Node: ' + n.name)} // Simple fallback or implement Popup lift later
+        onViewNode={(n) => setViewingNodeId(n.id)} // Open InfoModal
         onDeleteNode={handleDeleteNode}
         onDuplicateNode={handleDuplicateNode}
         onAddGroup={handleAddGroupToRoot}
         onAddNode={handleAddNodeToGroup}
       />
 
-      {/* EDITORS */}
+      {/* EDITORS & MODALS */}
+      <InfoModal
+        isOpen={!!viewingNodeId}
+        node={viewingNode}
+        onClose={() => setViewingNodeId(null)}
+        onEdit={(n) => { setViewingNodeId(null); setEditingNodeId(n.id); }}
+      />
+
       <JsonEditor
         isOpen={isJsonEditorOpen}
         initialData={projectTree}

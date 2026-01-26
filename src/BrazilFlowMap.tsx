@@ -26,9 +26,10 @@ function DeckGLOverlay(props: { layers: any[] }) {
 
 interface BrazilFlowMapProps {
     nodes: ProjectNode[];
+    onNodeClick?: (node: ProjectNode) => void;
 }
 
-export function BrazilFlowMap({ nodes }: BrazilFlowMapProps) {
+export function BrazilFlowMap({ nodes, onNodeClick }: BrazilFlowMapProps) {
     // Interactions
     const [hoverInfo, setHoverInfo] = useState<TooltipInfo | null>(null);
     const [cursor, setCursor] = useState<string>('default');

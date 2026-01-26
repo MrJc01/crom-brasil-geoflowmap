@@ -29,7 +29,12 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
 
     useEffect(() => {
         if (data) {
-            setFormData(() => JSON.parse(JSON.stringify(data)));
+            // Merge with defaults to ensure controls like width appear even for legacy items
+            setFormData(() => ({
+                width: 3,
+                color: [0, 255, 255],
+                ...JSON.parse(JSON.stringify(data))
+            }));
         }
     }, [data]);
 
@@ -42,14 +47,14 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
 
         // Reset data based on type template
         setFormData((prev: any) => {
-            const base = { name: prev.name, color: prev.color, info: prev.info, itemType: newType };
+            const base = { name: prev.name, color: prev.color, info: prev.info, itemType: newType, width: 3 };
 
             if (newType === 'Line') {
                 return { ...base, path: [[-46, -23], [-43, -22]] };
             } else if (newType === 'Arc') {
                 return { ...base, source: [-46, -23], target: [-43, -22], value: 100 };
             } else if (newType === 'Scatterplot') {
-                return { ...base, coordinates: [-46, -23] };
+                return { ...base, coordinates: [-46, -23], radius: 1000 };
             } else if (newType === 'GeoJson') {
                 // Simplistic template for GeoJson (could be complex)
                 return { ...base, data: {} };
@@ -195,8 +200,46 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
         </div>
     );
 
+    const renderColorInput = (key: string, value: [number, number, number], onChange: (val: [number, number, number]) => void) => (
+        <div key={key} className="mb-4">
+            <label className="block text-xs text-slate-400 mb-1 capitalize">Cor (RGB)</label>
+            <div className="flex gap-2">
+                {[0, 1, 2].map(idx => (
+                    <div key={idx} className="flex-1">
+                        <input
+                            type="number"
+                            min="0" max="255"
+                            value={value ? value[idx] : 0}
+                            onChange={(e) => {
+                                const newValue = [...(value || [0, 0, 0])] as [number, number, number];
+                                newValue[idx] = Number(e.target.value);
+                                onChange(newValue);
+                            }}
+                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-sm text-center text-slate-200 focus:border-emerald-500/50 outline-none"
+                        />
+                    </div>
+                ))}
+                <div
+                    className="w-8 h-8 rounded border border-white/10"
+                    style={{ backgroundColor: value ? `rgb(${value[0]},${value[1]},${value[2]})` : 'transparent' }}
+                />
+            </div>
+        </div>
+    );
+
     const renderField = (key: string, value: any) => {
-        if (key === 'itemType') return null; // Handle separately in header
+        if (key === 'itemType') return null;
+
+        // Specific fields
+        if (key === 'color' && Array.isArray(value)) {
+            return renderColorInput(key, value as [number, number, number], (val) => handleChange(key, val));
+        }
+
+        if (key === 'getWidth') { // DeckGL often uses getWidth or width. Let's assume user uses 'width' or 'getWidth'. 
+            // In our mock data, lines don't have width property yet, we need to add it or support generic number.
+            // But let's check generic number renderer first.
+            // Actually, for better UX let's force a "width" field if itemType is Line.
+        }
 
         if (key === 'source' && Array.isArray(value)) {
             return renderCoordinateInputs(key, 'Origem', value,
@@ -235,11 +278,15 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
         if (key === 'info') {
             return (
                 <div key={key} className="mb-4">
-                    <label className="block text-xs text-slate-400 mb-1">Markdown Info</label>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs text-slate-400">Notas / Conteúdo (Markdown)</label>
+                        <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">Suporta Checks [ ]</span>
+                    </div>
                     <textarea
                         value={value || ''}
                         onChange={(e) => handleChange(key, e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-slate-200 min-h-[100px] font-mono focus:border-emerald-500/50 outline-none resize-y"
+                        className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-slate-200 min-h-[120px] font-mono focus:border-emerald-500/50 outline-none resize-y placeholder-slate-600"
+                        placeholder="# Título&#10;- [ ] Pendência 1&#10;- [x] Feito"
                     />
                 </div>
             );
@@ -248,7 +295,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
         if (typeof value === 'string' || typeof value === 'number') {
             return (
                 <div key={key} className="mb-4">
-                    <label className="block text-xs text-slate-400 mb-1 capitalize">{key}</label>
+                    <label className="block text-xs text-slate-400 mb-1 capitalize">{key === 'width' ? 'Espessura (px)' : key}</label>
                     <input
                         type={typeof value === 'number' ? 'number' : 'text'}
                         value={value}
@@ -258,7 +305,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                 </div>
             );
         }
-        return null; // Ensure null is returned if no match
+        return null;
     };
 
     return (
