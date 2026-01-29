@@ -7,43 +7,126 @@ import { ItemEditor } from './components/ItemEditor';
 import { JsonEditor } from './components/JsonEditor';
 import { DetailsPanel } from './components/DetailsPanel';
 import { ScreenshotPreview } from './components/ScreenshotPreview';
-import type { ProjectNode, ItemType } from './lib/types';
-import { LAYERS_CONFIG } from './data/layersConfig';
+import type { ProjectNode } from './lib/types';
 import './App.css';
 
 // --- MOCK INITIAL DATA ---
 const MOCK_TREE: ProjectNode[] = [
   {
-    id: 'group-exports',
-    name: 'Exportações',
-    type: 'group',
+    id: "group-commodities",
+    name: "Exportação de Commodities",
+    type: "group",
     visible: true,
-    children: LAYERS_CONFIG.filter(l => l.type === 'Arc').map(l => ({
-      id: l.id,
-      name: l.name,
-      type: 'item',
-      itemType: 'Arc',
-      visible: l.visible,
-      color: l.color,
-      data: l.data[0],
-      info: l.info
-    }))
+    children: [
+      {
+        id: "flow-soja",
+        name: "Rota da Soja (Sorriso -> Xangai)",
+        type: "item",
+        itemType: "Arc",
+        visible: true,
+        color: [106, 230, 106],
+        data: {
+          source: [-55.71, -12.54],
+          target: [121.47, 31.23],
+          value: 2000,
+          name: "Mato Grosso -> China",
+          info: "## Rota da Soja\n\nConexão entre **Sorriso (MT)**, a capital nacional do agronegócio, e **Xangai**, principal porta de entrada na China."
+        },
+        info: "# Soja Brasileira\n\nO Brasil exporta mais de **80 milhões de toneladas** de soja anualmente para a China."
+      },
+      {
+        id: "flow-minerio",
+        name: "Rota do Ferro (Carajás -> Roterdã)",
+        type: "item",
+        itemType: "Arc",
+        visible: true,
+        color: [255, 100, 50],
+        data: {
+          source: [-50.13, -6.06],
+          target: [4.47, 51.92],
+          value: 1500,
+          name: "Serra dos Carajás -> Europa",
+          info: "## Minério de Ferro\n\nSaída da maior mina de ferro a céu aberto do mundo (Vale S.A.) para o porto de **Roterdã**."
+        },
+        info: "# Minério de Ferro\n\nSegunda maior pauta de exportação do Brasil."
+      }
+    ]
   },
   {
-    id: 'group-infra',
-    name: 'Infraestrutura',
-    type: 'group',
+    id: "group-digital",
+    name: "Conexões Digitais (Cabos Submarinos)",
+    type: "group",
     visible: true,
-    children: LAYERS_CONFIG.filter(l => l.type !== 'Arc').map(l => ({
-      id: l.id,
-      name: l.name,
-      type: 'item',
-      itemType: l.type as ItemType,
-      visible: l.visible,
-      color: l.color,
-      data: Array.isArray(l.data) ? l.data[0] : l.data,
-      info: l.info
-    }))
+    children: [
+      {
+        id: "cable-ellalink",
+        name: "Cabo EllaLink (Brasil -> Europa)",
+        type: "item",
+        itemType: "Arc",
+        visible: true,
+        color: [0, 200, 255],
+        data: {
+          source: [-38.52, -3.73],
+          target: [-8.86, 37.95],
+          value: 100,
+          name: "Fortaleza -> Sines (Portugal)",
+          info: "## EllaLink\n\nPrimeiro cabo de fibra óptica de alta capacidade conectando diretamente a América do Sul à Europa, reduzindo a latência em 50%."
+        },
+        info: "# Hub Digital de Fortaleza\n\nFortaleza é um dos maiores pontos de troca de tráfego de dados do mundo."
+      },
+      {
+        id: "cable-seabras",
+        name: "Cabo Seabras-1 (Brasil -> EUA)",
+        type: "item",
+        itemType: "Arc",
+        visible: true,
+        color: [0, 140, 255],
+        data: {
+          source: [-46.40, -24.00],
+          target: [-74.00, 40.71],
+          value: 120,
+          name: "Praia Grande -> Nova York"
+        },
+        info: "# Conexão Financeira\n\nRota crítica para o mercado financeiro (B3 <-> NYSE)."
+      }
+    ]
+  },
+  {
+    id: "group-energy-logistics",
+    name: "Energia e Logística Interna",
+    type: "group",
+    visible: true,
+    children: [
+      {
+        id: "line-itaipu",
+        name: "Transmissão Itaipu (Linha)",
+        type: "item",
+        itemType: "Line",
+        visible: true,
+        color: [255, 215, 0],
+        data: {
+          source: [-54.58, -25.51],
+          target: [-46.63, -23.55],
+          name: "HVDC Itaipu -> Sudeste",
+          value: 80
+        },
+        info: "# Energia Renovável\n\nLinhas de transmissão que levam energia da **Usina de Itaipu** para o centro econômico em São Paulo."
+      },
+      {
+        id: "point-santos",
+        name: "Porto de Santos (Hub)",
+        type: "item",
+        itemType: "Scatterplot",
+        visible: true,
+        color: [255, 255, 255],
+        data: {
+          coordinates: [-46.33, -23.96],
+          name: "Porto de Santos",
+          value: 200
+        },
+        info: "# Maior Porto da AL\n\nResponsável por quase 30% da balança comercial brasileira."
+      }
+    ]
   }
 ];
 
