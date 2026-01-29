@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { Camera } from 'lucide-react';
 import { CromGeoMap } from './lib';
@@ -176,9 +176,9 @@ function App() {
   const handleSaveEditor = (formData: any) => {
     if (!editingNodeId) return;
     // Destructuring carefully to separate Node properties from Data properties
-    const { name, color, info, itemType, value, width, ...itemData } = formData;
+    const { name, color, info, itemType, value, width, shape, size, ...itemData } = formData;
     setProjectTree(prev => updateNodeInTree(prev, editingNodeId, {
-      name, color, info, itemType, value, width, data: itemData
+      name, color, info, itemType, value, width, shape, size, data: itemData
     }));
     setEditingNodeId(null);
   };
@@ -224,15 +224,19 @@ function App() {
 
   // Editor Data Preparation
   const editingNode = editingNodeId ? findNode(projectTree, editingNodeId) : null;
-  const editorData = editingNode ? {
+
+  // Memoize to prevent spurious resets in Editor
+  const editorData = useMemo(() => editingNode ? {
     name: editingNode.name,
     color: editingNode.color,
     info: editingNode.info,
     itemType: editingNode.itemType,
     value: editingNode.value,
     width: editingNode.width,
+    shape: editingNode.shape,
+    size: editingNode.size,
     ...editingNode.data
-  } : null;
+  } : null, [editingNode]);
 
   const viewingNode = viewingNodeId ? findNode(projectTree, viewingNodeId) : null;
 
@@ -292,8 +296,9 @@ function App() {
             onClose={() => setJsonEditorOpen(false)}
           />
 
-          {editingNode && (
+          {editingNode && editorData && (
             <ItemEditor
+              nodeId={editingNode.id}
               data={editorData}
               layerType={editingNode.type}
               itemType={editingNode.itemType}

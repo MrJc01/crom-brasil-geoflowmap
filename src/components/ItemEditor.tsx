@@ -4,6 +4,7 @@ import { searchAddress } from '../utils/geocoding';
 import type { ItemType } from '../lib/types';
 
 interface ItemEditorProps {
+    nodeId: string;
     data: any;
     layerType: string;
     itemType?: ItemType;
@@ -11,13 +12,15 @@ interface ItemEditorProps {
     onClose: () => void;
 }
 
-export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemType, onSave, onClose }) => {
+export const ItemEditor: React.FC<ItemEditorProps> = ({ nodeId, data, layerType, itemType, onSave, onClose }) => {
     // Merge defaults immediately
     const [formData, setFormData] = useState<any>({
         name: '',
         color: [0, 255, 255],
         value: 0,
         width: 3,
+        size: 30, // Default Point Size
+        shape: 'circle2d', // Default Shape
         ...data
     });
 
@@ -33,6 +36,8 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
         if (data) {
             const initialData = {
                 width: 3,
+                size: 30,
+                shape: 'circle2d',
                 color: [0, 255, 255],
                 ...JSON.parse(JSON.stringify(data))
             };
@@ -40,7 +45,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
             if (itemType) setCurrentItemType(itemType);
             setFormData(initialData);
         }
-    }, [data, itemType]);
+    }, [nodeId]); // Dependencies: only reset if nodeId changes
 
     const handleTypeChange = (newType: ItemType) => {
         setCurrentItemType(newType);
@@ -52,20 +57,26 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                 color: prev.color,
                 info: prev.info,
                 value: prev.value,
-                width: prev.width || 3
+                width: prev.width || 3,
+                size: prev.size || 30,
+                shape: prev.shape || 'circle2d'
             };
 
             // Logic to preserve coordinates if possible
             let startCoord = [-55, -15];
+            let endCoord = null;
             if (prev.coordinates) startCoord = prev.coordinates;
-            else if (prev.source) startCoord = prev.source;
+            else if (prev.source) {
+                startCoord = prev.source;
+                if (prev.target) endCoord = prev.target;
+            }
             else if (prev.path && prev.path.length > 0) startCoord = prev.path[0];
 
             if (newType === 'Line' || newType === 'Arc') {
                 return {
                     ...base,
                     source: startCoord,
-                    target: [startCoord[0] + 2, startCoord[1] + 2]
+                    target: endCoord || [startCoord[0] + 2, startCoord[1] + 2]
                 };
             } else if (newType === 'Scatterplot') {
                 return {
@@ -259,6 +270,19 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                     </div>
                 </div>
 
+                {/* Line Width - Show for Line/Arc */}
+                {(currentItemType === 'Line' || currentItemType === 'Arc') && (
+                    <div>
+                        <label className="block text-xs text-slate-400 mb-1">Espessura da Linha</label>
+                        <input
+                            type="number"
+                            value={formData.width || 3}
+                            onChange={e => handleChange('width', Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-sm text-white font-mono focus:border-emerald-500/50 outline-none"
+                        />
+                    </div>
+                )}
+
                 {/* Geometry Config */}
                 <div className="pt-2 border-t border-white/5">
                     <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-3">Geometria</h4>
@@ -271,7 +295,34 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ data, layerType, itemTyp
                     )}
 
                     {currentItemType === 'Scatterplot' && (
-                        renderCoordinateInput('Coordenadas', 'coordinates', formData.coordinates)
+                        <>
+                            {renderCoordinateInput('Coordenadas', 'coordinates', formData.coordinates)}
+
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Formato</label>
+                                    <select
+                                        value={formData.shape || 'circle2d'}
+                                        onChange={e => handleChange('shape', e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-sm text-white focus:border-emerald-500/50 outline-none"
+                                    >
+                                        <option value="circle2d">Círculo 2D</option>
+                                        <option value="square2d">Quadrado 2D</option>
+                                        <option value="circle3d">Cilindro 3D</option>
+                                        <option value="square3d">Cubo 3D</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Tamanho (Raio)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.size || 30}
+                                        onChange={e => handleChange('size', Number(e.target.value))}
+                                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-sm text-white font-mono focus:border-emerald-500/50 outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </>
                     )}
                 </div>
 

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Map, { useControl, type ViewState } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { ArcLayer, ScatterplotLayer, LineLayer } from '@deck.gl/layers';
+import { ArcLayer, ScatterplotLayer, LineLayer, ColumnLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { ProjectNode } from './types';
@@ -50,7 +50,7 @@ export function CromGeoMap({ nodes, onNodeClick, onEditNode: _onEditNode, initia
 
                 // Generic accessor for standardized props
                 const commonProps = {
-                    id: node.id,
+                    id: `${node.id}-${node.itemType}`,
                     data: layerData,
                     pickable: true,
                     onHover: (info: any) => {
@@ -109,13 +109,35 @@ export function CromGeoMap({ nodes, onNodeClick, onEditNode: _onEditNode, initia
                         getWidth: (_d: any) => node.width || 3,
                     }));
                 } else if (node.itemType === 'Scatterplot') {
-                    layers.push(new ScatterplotLayer({
-                        ...commonProps,
-                        getPosition: (d: any) => d.coordinates,
-                        getFillColor: getColor,
-                        getRadius: (_d: any) => (node.value ? node.value * 100 : 30000),
-                        radiusMinPixels: 4,
-                    }));
+                    // Shape logic
+                    const shape = node.shape || 'circle2d';
+                    const size = node.size || 30; // Radius or Width
+                    const is3D = shape === 'circle3d' || shape === 'square3d';
+
+                    if (shape === 'circle2d') {
+                        layers.push(new ScatterplotLayer({
+                            ...commonProps,
+                            getPosition: (d: any) => d.coordinates,
+                            getFillColor: getColor,
+                            getRadius: (_d: any) => size * 100, // Scale adjustment
+                            radiusMinPixels: 4,
+                        }));
+                    } else {
+                        // Square 2D, Square 3D, Cylinder (Circle 3D) -> All can use ColumnLayer
+                        const isCylinder = shape === 'circle3d'; // ColumnLayer has resolution to make it cylindrical
+
+                        layers.push(new ColumnLayer({
+                            ...commonProps,
+                            getPosition: (d: any) => d.coordinates,
+                            getFillColor: getColor,
+                            getElevation: (_d: any) => is3D ? (node.value ? node.value * 1000 : 50000) : 0, // Elevation only for 3D
+                            diskResolution: isCylinder ? 20 : 4, // 4 for Square, 20 for Cylinder
+                            radius: size * 100, // Size scaling
+                            extruded: is3D,
+                            pickable: true,
+                            material: is3D ? true : undefined // Lighting
+                        }));
+                    }
                 }
             }
         });

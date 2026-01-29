@@ -19,6 +19,8 @@ export interface ProjectNode {
     };
     width?: number;
     value?: number; // Added for standardization
+    size?: number; // Explicit size for points
+    shape?: 'circle2d' | 'square2d' | 'circle3d' | 'square3d';
     data?: any;
     info?: string;
 }
