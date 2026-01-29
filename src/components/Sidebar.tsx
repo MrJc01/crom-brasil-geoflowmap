@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { ProjectNode } from '../types/ProjectTypes';
+import type { ProjectNode } from '../lib/types';
 import { SidebarNode } from './SidebarNode';
 import { Menu, X, FolderPlus, FileJson, Plus, Edit, Copy, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

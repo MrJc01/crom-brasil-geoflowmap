@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import Map, { useControl } from 'react-map-gl/maplibre';
+import Map, { useControl, type ViewState } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import { ArcLayer, ScatterplotLayer, LineLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import type { ProjectNode } from './types/ProjectTypes';
+import type { ProjectNode } from './types';
 import { Tooltip } from './components/Tooltip';
 import type { TooltipInfo } from './components/Tooltip';
 
@@ -15,15 +15,27 @@ function DeckGLOverlay(props: { layers: any[] }) {
     return null;
 }
 
-interface BrazilFlowMapProps {
+export interface CromGeoMapProps {
     nodes: ProjectNode[];
     onNodeClick?: (node: ProjectNode) => void;
+    // Keeping onEditNode as a callback is fine, it's not a UI dependency. 
+    // But if the goal is strictly "Remover dependências de UI... O mapa deve apenas disparar eventos"
+    // onEditNode IS an event.
     onEditNode?: (node: ProjectNode) => void;
+    initialViewState?: Partial<ViewState>;
 }
 
-export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapProps) {
+export function CromGeoMap({ nodes, onNodeClick, onEditNode: _onEditNode, initialViewState }: CromGeoMapProps) {
     const [hoverInfo, setHoverInfo] = useState<TooltipInfo | null>(null);
     const [cursor, setCursor] = useState<string>('default');
+
+    const defaultViewState = {
+        longitude: -55,
+        latitude: -15,
+        zoom: 3.5,
+        pitch: 45,
+        bearing: 0
+    };
 
     const getFlattenedLayers = (nodes: ProjectNode[]): any[] => {
         let layers: any[] = [];
@@ -68,6 +80,10 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
 
                 // Robust Color Accessor
                 const getColor = (d: any): [number, number, number] => {
+                    // d is unused in generic but used in specific layers via accessor if needed, 
+                    // but here we use node props.
+                    // to shut up linter:
+                    void d;
                     const c = node.color;
                     if (Array.isArray(c) && c.length >= 3) {
                         return c as [number, number, number];
@@ -82,7 +98,7 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                         getTargetPosition: (d: any) => d.target,
                         getSourceColor: getColor,
                         getTargetColor: (d: any) => node.targetColor || getColor(d),
-                        getWidth: (d: any) => node.width || 3,
+                        getWidth: (_d: any) => node.width || 3,
                     }));
                 } else if (node.itemType === 'Line') {
                     layers.push(new LineLayer({
@@ -90,14 +106,14 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
                         getSourcePosition: (d: any) => d.source,
                         getTargetPosition: (d: any) => d.target,
                         getColor: getColor,
-                        getWidth: (d: any) => node.width || 3,
+                        getWidth: (_d: any) => node.width || 3,
                     }));
                 } else if (node.itemType === 'Scatterplot') {
                     layers.push(new ScatterplotLayer({
                         ...commonProps,
                         getPosition: (d: any) => d.coordinates,
                         getFillColor: getColor,
-                        getRadius: (d: any) => (node.value ? node.value * 100 : 30000),
+                        getRadius: (_d: any) => (node.value ? node.value * 100 : 30000),
                         radiusMinPixels: 4,
                     }));
                 }
@@ -112,11 +128,8 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
     return (
         <Map
             initialViewState={{
-                longitude: -55,
-                latitude: -15,
-                zoom: 3.5,
-                pitch: 45,
-                bearing: 0
+                ...defaultViewState,
+                ...initialViewState
             }}
             style={{ width: '100vw', height: '100vh' }}
             mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"

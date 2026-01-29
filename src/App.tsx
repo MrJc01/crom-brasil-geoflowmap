@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import html2canvas from 'html2canvas';
 import { Camera } from 'lucide-react';
-import { BrazilFlowMap } from './BrazilFlowMap';
+import { CromGeoMap } from './lib';
 import { Sidebar } from './components/Sidebar';
 import { ItemEditor } from './components/ItemEditor';
 import { JsonEditor } from './components/JsonEditor';
 import { InfoModal } from './components/InfoModal';
 import { ScreenshotPreview } from './components/ScreenshotPreview';
-import type { ProjectNode, ItemType } from './types/ProjectTypes';
+import type { ProjectNode, ItemType } from './lib/types';
 import { LAYERS_CONFIG } from './data/layersConfig';
 import './App.css';
 
@@ -240,7 +240,7 @@ function App() {
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950">
       {/* MAP LAYOUT (Z-0) */}
       <div className="absolute inset-0 z-0">
-        <BrazilFlowMap
+        <CromGeoMap
           nodes={projectTree}
           onNodeClick={(n) => !isCapturing && setViewingNodeId(n.id)}
           onEditNode={(n) => !isCapturing && setEditingNodeId(n.id)}

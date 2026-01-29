@@ -1,28 +1,46 @@
 {
-  "name": "warped-trifid",
+  "name": "@crom/geoflowmap",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "./dist/crom-geoflowmap.umd.js",
+  "module": "./dist/crom-geoflowmap.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/crom-geoflowmap.es.js",
+      "require": "./dist/crom-geoflowmap.umd.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@deck.gl/extensions": "^9.2.6",
     "@deck.gl/mapbox": "^9.2.6",
     "deck.gl": "^9.2.6",
+    "maplibre-gl": "^5.16.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-map-gl": "^8.1.0"
+  },
+  "dependencies": {
     "framer-motion": "^12.29.0",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.563.0",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@deck.gl/extensions": "^9.2.6",
+    "@deck.gl/mapbox": "^9.2.6",
+    "deck.gl": "^9.2.6",
     "maplibre-gl": "^5.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-map-gl": "^8.1.0",
-    "react-markdown": "^10.1.0"
-  },
-  "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.1",
@@ -38,7 +56,8 @@
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vite-plugin-dts": "^4.5.0"
   },
   "overrides": {
     "@babel/parser": "7.28.5"

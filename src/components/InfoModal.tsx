@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Edit, Calendar, User } from 'lucide-react';
+import { X, Edit, Calendar } from 'lucide-react';
 import Markdown from 'react-markdown';
-import type { ProjectNode } from '../types/ProjectTypes';
+import type { ProjectNode } from '../lib/types';
 
 interface InfoModalProps {
     node: ProjectNode | null;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ProjectNode } from '../types/ProjectTypes';
+import type { ProjectNode } from '../lib/types';
 import { ChevronRight, ChevronDown, Folder, Eye, EyeOff, Info, Edit3 } from 'lucide-react';
 
 interface SidebarNodeProps {
@@ -65,7 +65,7 @@ export const SidebarNode: React.FC<SidebarNodeProps> = ({
 
                 {isExpanded && node.children && (
                     <div className="border-l border-white/5 ml-[22px]">
-                        {node.children.map(child => (
+                        {node.children.map((child: ProjectNode) => (
                             <SidebarNode
                                 key={child.id}
                                 node={child}

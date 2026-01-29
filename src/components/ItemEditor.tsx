@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X, MapPin, Save } from 'lucide-react';
 import { searchAddress } from '../utils/geocoding';
-import type { ItemType } from '../types/ProjectTypes';
+import type { ItemType } from '../lib/types';
 
 interface ItemEditorProps {
     data: any;
