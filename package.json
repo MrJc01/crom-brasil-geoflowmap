@@ -1,20 +1,44 @@
 {
-  "name": "@crom/geoflowmap",
-  "private": true,
-  "version": "0.0.0",
+  "name": "crom-geoflowmap",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
+  "description": "React component for 3D geographic flow visualization",
+  "keywords": [
+    "react",
+    "map",
+    "deck.gl",
+    "visualization",
+    "geoflow",
+    "3d",
+    "maplibre"
+  ],
+  "author": "Crom Brasil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crom-brasil/geoflowmap"
+  },
   "main": "./dist/crom-geoflowmap.umd.js",
   "module": "./dist/crom-geoflowmap.es.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/crom-geoflowmap.es.js",
-      "require": "./dist/crom-geoflowmap.umd.js"
+      "require": "./dist/crom-geoflowmap.umd.js",
+      "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "dist-standalone"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:lib": "vite build --mode lib",
+    "build:standalone": "vite build --config vite.config.standalone.ts",
+    "build:all": "npm run build:lib && npm run build:standalone",
     "lint": "eslint .",
     "preview": "vite preview"
   },
