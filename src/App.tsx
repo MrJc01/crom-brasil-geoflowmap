@@ -5,7 +5,7 @@ import { CromGeoMap } from './lib';
 import { Sidebar } from './components/Sidebar';
 import { ItemEditor } from './components/ItemEditor';
 import { JsonEditor } from './components/JsonEditor';
-import { InfoModal } from './components/InfoModal';
+import { DetailsPanel } from './components/DetailsPanel';
 import { ScreenshotPreview } from './components/ScreenshotPreview';
 import type { ProjectNode, ItemType } from './lib/types';
 import { LAYERS_CONFIG } from './data/layersConfig';
@@ -278,7 +278,7 @@ function App() {
       {/* EDITORS & MODALS - HIDDEN DURING CAPTURE */}
       {!isCapturing && (
         <>
-          <InfoModal
+          <DetailsPanel
             isOpen={!!viewingNodeId}
             node={viewingNode}
             onClose={() => setViewingNodeId(null)}
