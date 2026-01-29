@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import html2canvas from 'html2canvas';
+import { Camera } from 'lucide-react';
 import { BrazilFlowMap } from './BrazilFlowMap';
 import { Sidebar } from './components/Sidebar';
 import { ItemEditor } from './components/ItemEditor';
 import { JsonEditor } from './components/JsonEditor';
 import { InfoModal } from './components/InfoModal';
+import { ScreenshotPreview } from './components/ScreenshotPreview';
 import type { ProjectNode, ItemType } from './types/ProjectTypes';
 import { LAYERS_CONFIG } from './data/layersConfig';
 import './App.css';
@@ -119,6 +122,10 @@ function App() {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [viewingNodeId, setViewingNodeId] = useState<string | null>(null);
 
+  // Screenshot State
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   // HANDLERS
   const handleToggleVisibility = (id: string, visible: boolean) => {
     setProjectTree(prev => updateNodeInTree(prev, id, { visible }));
@@ -176,6 +183,45 @@ function App() {
     setEditingNodeId(null);
   };
 
+  // --- SCREENSHOT HANDLER ---
+  const handleScreenshot = async () => {
+    setIsCapturing(true);
+    // Wait for state to propagate and UI to hide
+    setTimeout(async () => {
+      try {
+        const canvas = await html2canvas(document.body, {
+          allowTaint: true,
+          useCORS: true,
+          backgroundColor: '#020617', // Match slate-950
+          ignoreElements: (element) => {
+            // Extra insurance to ignore elements if needed, 
+            // though React state hiding is cleaner
+            return element.classList && element.classList.contains('no-print');
+          }
+        });
+
+        const image = canvas.toDataURL("image/png");
+        setPreviewImage(image);
+      } catch (err) {
+        console.error("Screenshot failed:", err);
+        alert("Falha ao capturar a tela. Verifique o console.");
+      } finally {
+        setIsCapturing(false);
+      }
+    }, 300); // 300ms delay
+  };
+
+  const handleDownloadScreenshot = () => {
+    if (!previewImage) return;
+    const link = document.createElement('a');
+    link.href = previewImage;
+    link.download = `flowmap-screenshot-${new Date().toISOString().slice(0, 19)}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setPreviewImage(null);
+  };
+
   // Editor Data Preparation
   const editingNode = editingNodeId ? findNode(projectTree, editingNodeId) : null;
   const editorData = editingNode ? {
@@ -196,49 +242,77 @@ function App() {
       <div className="absolute inset-0 z-0">
         <BrazilFlowMap
           nodes={projectTree}
-          onNodeClick={(n) => setViewingNodeId(n.id)}
-          onEditNode={(n) => setEditingNodeId(n.id)}
+          onNodeClick={(n) => !isCapturing && setViewingNodeId(n.id)}
+          onEditNode={(n) => !isCapturing && setEditingNodeId(n.id)}
         />
       </div>
 
-      {/* UI OVERLAY (Z-10+) */}
-      <Sidebar
-        nodes={projectTree}
-        onToggleVisibility={handleToggleVisibility}
-        onEditJson={() => setJsonEditorOpen(true)}
-        onEditNode={(n) => setEditingNodeId(n.id)}
-        onViewNode={(n) => setViewingNodeId(n.id)} // Open InfoModal
-        onDeleteNode={handleDeleteNode}
-        onDuplicateNode={handleDuplicateNode}
-        onAddGroup={handleAddGroupToRoot}
-        onAddNode={handleAddNodeToGroup}
-      />
+      {/* UI OVERLAY (Z-10+) - HIDDEN DURING CAPTURE */}
+      {!isCapturing && (
+        <>
+          <Sidebar
+            nodes={projectTree}
+            onToggleVisibility={handleToggleVisibility}
+            onEditJson={() => setJsonEditorOpen(true)}
+            onEditNode={(n) => setEditingNodeId(n.id)}
+            onViewNode={(n) => setViewingNodeId(n.id)} // Open InfoModal
+            onDeleteNode={handleDeleteNode}
+            onDuplicateNode={handleDuplicateNode}
+            onAddGroup={handleAddGroupToRoot}
+            onAddNode={handleAddNodeToGroup}
+          />
 
-      {/* EDITORS & MODALS */}
-      <InfoModal
-        isOpen={!!viewingNodeId}
-        node={viewingNode}
-        onClose={() => setViewingNodeId(null)}
-        onEdit={(n) => { setViewingNodeId(null); setEditingNodeId(n.id); }}
-      // Pass a default "Line" type for new items if not specified, or let sidebar handle logic
-      />
+          {/* SCREENSHOT BUTTON */}
+          <div className="fixed bottom-6 right-6 z-40 tooltip-container">
+            <button
+              onClick={handleScreenshot}
+              className="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-full shadow-2xl border border-white/10 transition-all hover:scale-105 active:scale-95 group"
+              title="Capturar Tela"
+            >
+              <Camera size={24} className="group-hover:text-emerald-400 transition-colors" />
+            </button>
+          </div>
+        </>
+      )}
 
-      <JsonEditor
-        isOpen={isJsonEditorOpen}
-        initialData={projectTree}
-        onSave={(newData) => setProjectTree(newData)}
-        onClose={() => setJsonEditorOpen(false)}
-      />
+      {/* EDITORS & MODALS - HIDDEN DURING CAPTURE */}
+      {!isCapturing && (
+        <>
+          <InfoModal
+            isOpen={!!viewingNodeId}
+            node={viewingNode}
+            onClose={() => setViewingNodeId(null)}
+            onEdit={(n) => { setViewingNodeId(null); setEditingNodeId(n.id); }}
+          />
 
-      {editingNode && (
-        <ItemEditor
-          data={editorData}
-          layerType={editingNode.type}
-          itemType={editingNode.itemType} // Pass current type
-          onSave={handleSaveEditor}
-          onClose={() => setEditingNodeId(null)}
+          <JsonEditor
+            isOpen={isJsonEditorOpen}
+            initialData={projectTree}
+            onSave={(newData) => setProjectTree(newData)}
+            onClose={() => setJsonEditorOpen(false)}
+          />
+
+          {editingNode && (
+            <ItemEditor
+              data={editorData}
+              layerType={editingNode.type}
+              itemType={editingNode.itemType}
+              onSave={handleSaveEditor}
+              onClose={() => setEditingNodeId(null)}
+            />
+          )}
+        </>
+      )}
+
+      {/* PREVIEW MODAL */}
+      {previewImage && (
+        <ScreenshotPreview
+          imageUrl={previewImage}
+          onClose={() => setPreviewImage(null)}
+          onDownload={handleDownloadScreenshot}
         />
       )}
+
     </div>
   );
 }

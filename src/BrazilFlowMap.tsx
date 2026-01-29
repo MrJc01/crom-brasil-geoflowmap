@@ -121,6 +121,8 @@ export function BrazilFlowMap({ nodes, onNodeClick, onEditNode }: BrazilFlowMapP
             style={{ width: '100vw', height: '100vh' }}
             mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
             cursor={cursor}
+            mapLib={maplibregl}
+            canvasContextAttributes={{ preserveDrawingBuffer: true }}
         >
             <DeckGLOverlay layers={layers} />
             {hoverInfo && hoverInfo.object && (
