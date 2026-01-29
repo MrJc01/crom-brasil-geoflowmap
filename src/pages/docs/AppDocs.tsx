@@ -540,6 +540,7 @@ export default function AppDocs() {
 <head>
   <title>GeoFlowMap Demo</title>
   <style>#map { width: 100vw; height: 100vh; }</style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crom-geoflowmap/dist-standalone/crom-geoflowmap.css">
 </head>
 <body>
   <div id="map"></div>
@@ -570,6 +571,7 @@ export default function AppDocs() {
 <head>
   <title>GeoFlowMap Demo</title>
   <style>#map { width: 100vw; height: 100vh; }</style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/crom-geoflowmap/dist-standalone/crom-geoflowmap.css">
 </head>
 <body>
   <div id="map"></div>

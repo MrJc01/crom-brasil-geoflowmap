@@ -1,7 +1,7 @@
 {
   "name": "crom-geoflowmap",
   "private": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "React component for 3D geographic flow visualization",
   "keywords": [
@@ -24,9 +24,9 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/crom-geoflowmap.es.js",
-      "require": "./dist/crom-geoflowmap.umd.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/crom-geoflowmap.umd.js"
     }
   },
   "files": [
