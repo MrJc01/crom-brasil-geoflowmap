@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Globe, BookOpen, Code, Copy, Check, ArrowLeft,
+    BookOpen, Copy, Check, ArrowLeft,
     Ship, Shield, Users, Cable, Radio, FileJson, Braces
 } from 'lucide-react';
 import { CromGeoMap } from '../../lib';
