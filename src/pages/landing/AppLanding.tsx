@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Code, Layers, Zap, ArrowRight, Github, BookOpen, Edit3 } from 'lucide-react';
+import { Globe, Code, Layers, Zap, ArrowRight, Github, BookOpen, Edit3, ExternalLink } from 'lucide-react';
 import { CromGeoMap } from '../../lib';
 import type { ProjectNode } from '../../lib/types';
 
@@ -279,7 +279,7 @@ export default function AppLanding() {
                                     Abrir Editor
                                 </a>
                                 <a
-                                    href="https://github.com/crom-brasil/geoflowmap"
+                                    href="https://github.com/MrJc01/crom-brasil-geoflowmap"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 px-8 py-4 bg-white/5 border border-white/20 rounded-2xl text-white font-semibold hover:bg-white/10 transition-all"
@@ -287,6 +287,93 @@ export default function AppLanding() {
                                     <Github size={20} />
                                     GitHub
                                 </a>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* CROM Section - Full Screen */}
+                <section className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+                    {/* Background Grid Pattern */}
+                    <div className="absolute inset-0 z-0">
+                        <div className="absolute inset-0 bg-black" />
+                        <div
+                            className="absolute inset-0 opacity-20"
+                            style={{
+                                backgroundImage: `
+                                    linear-gradient(rgba(0, 255, 100, 0.1) 1px, transparent 1px),
+                                    linear-gradient(90deg, rgba(0, 255, 100, 0.1) 1px, transparent 1px)
+                                `,
+                                backgroundSize: '50px 50px'
+                            }}
+                        />
+                        {/* Corner Decorations - CROM Style */}
+                        <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-green-500/50" />
+                        <div className="absolute top-0 right-0 w-32 h-32 border-r-2 border-t-2 border-green-500/50" />
+                        <div className="absolute bottom-0 left-0 w-32 h-32 border-l-2 border-b-2 border-green-500/50" />
+                        <div className="absolute bottom-0 right-0 w-32 h-32 border-r-2 border-b-2 border-green-500/50" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="relative z-10 max-w-4xl mx-auto text-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                        >
+                            {/* CROM Logo/Badge */}
+                            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-lg border border-green-500/30 bg-green-500/5 mb-8">
+                                <span className="text-green-400 font-mono text-sm tracking-wider">// DESENVOLVIDO POR</span>
+                            </div>
+
+                            {/* Title */}
+                            <h2 className="text-5xl md:text-7xl font-bold mb-6">
+                                <span className="text-white">C</span>
+                                <span className="text-green-400">R</span>
+                                <span className="text-white">O</span>
+                                <span className="text-green-400">M</span>
+                            </h2>
+
+                            {/* Subtitle */}
+                            <p className="text-xl md:text-2xl text-green-400/80 font-mono mb-8">
+                                Inovação em Software
+                            </p>
+
+                            {/* Description */}
+                            <div className="backdrop-blur-sm bg-black/50 border border-green-500/20 rounded-xl p-8 mb-10">
+                                <p className="text-lg text-slate-300 leading-relaxed mb-4 font-mono">
+                                    Do código aberto que move a comunidade às soluções privadas que impulsionam negócios.
+                                </p>
+                                <p className="text-slate-400 leading-relaxed">
+                                    A <span className="text-green-400 font-semibold">CROM</span> é uma empresa de software focada em
+                                    <span className="text-green-400"> descolonização neural</span>. Reduzimos a latência entre a intenção humana e a execução material.
+                                </p>
+                            </div>
+
+                            {/* Manifesto Quote */}
+                            <blockquote className="text-xl md:text-2xl text-slate-300 italic mb-10 border-l-4 border-green-500 pl-6 text-left max-w-2xl mx-auto">
+                                "Não caminhamos para a obsolescência humana, mas para a <span className="text-green-400 font-semibold not-italic">hipertrofia cognitiva assistida</span>. O código é o nosso novo lobo frontal."
+                            </blockquote>
+
+                            {/* CTA Button */}
+                            <a
+                                href="https://crom.run"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group inline-flex items-center gap-3 px-10 py-5 bg-green-500 hover:bg-green-400 rounded-xl text-black font-bold text-lg transition-all shadow-2xl shadow-green-500/30 hover:shadow-green-400/50 hover:scale-105"
+                            >
+                                Acessar CROM.RUN
+                                <ExternalLink size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                            </a>
+
+                            {/* Tech Stack Hint */}
+                            <div className="mt-10 flex items-center justify-center gap-4 text-green-500/50 font-mono text-sm">
+                                <span>[LOCAL-FIRST]</span>
+                                <span>•</span>
+                                <span>[OPEN-SOURCE]</span>
+                                <span>•</span>
+                                <span>[SOBERANIA DIGITAL]</span>
                             </div>
                         </motion.div>
                     </div>

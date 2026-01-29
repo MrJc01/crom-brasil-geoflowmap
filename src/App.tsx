@@ -337,6 +337,26 @@ function App() {
       {/* UI OVERLAY (Z-10+) - HIDDEN DURING CAPTURE */}
       {!isCapturing && (
         <>
+          {/* Navigation Bar */}
+          <nav className="fixed top-4 right-4 z-50 flex items-center gap-2">
+            <a
+              href="/"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800/90 hover:bg-slate-700 backdrop-blur-sm rounded-lg text-slate-300 hover:text-white text-sm font-medium transition-all border border-white/10"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+              Início
+            </a>
+            <a
+              href="https://crom.run"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600/90 hover:bg-green-500 backdrop-blur-sm rounded-lg text-white text-sm font-medium transition-all border border-green-400/30"
+            >
+              <span className="font-bold">CROM</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" x2="21" y1="14" y2="3" /></svg>
+            </a>
+          </nav>
+
           <Sidebar
             nodes={projectTree}
             onToggleVisibility={handleToggleVisibility}
