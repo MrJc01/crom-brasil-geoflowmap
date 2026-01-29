@@ -7,7 +7,7 @@ import { ItemEditor } from './components/ItemEditor';
 import { JsonEditor } from './components/JsonEditor';
 import { DetailsPanel } from './components/DetailsPanel';
 import { ScreenshotPreview } from './components/ScreenshotPreview';
-import type { ProjectNode } from './lib/types';
+import type { ProjectNode, ItemType } from './lib/types';
 import './App.css';
 
 // --- MOCK INITIAL DATA ---
